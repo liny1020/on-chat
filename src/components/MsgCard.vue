@@ -13,10 +13,11 @@ export default {
   name: "MsgCard",
   props: {
     info: Object,
+    userId: String
   },
   data() {
     return {
-      userId: "123",
+      // userId: "123",
     };
   },
 };

@@ -3,7 +3,7 @@
     <h1>{{ name }}</h1>
     <div class="body">
       <div class="item" v-for="item in msgList" :key="item.key">
-        <MsgCard :info="item" />
+        <MsgCard :info="item" :userId="userId" />
       </div>
     </div>
     <div class="footer">
@@ -28,7 +28,8 @@ export default {
       id,
       name,
       inputValue: "",
-      userId: "123",
+      socket: null,
+      userId: "17232",
       msgList: [
         { userId: "111", msg: "在?", dateTime: "2020-10-05 10:11:10" },
         { userId: "123", msg: "找我干嘛", dateTime: "2020-10-05 10:11:15" },
@@ -38,9 +39,51 @@ export default {
   },
   methods: {
     inputHandle(e) {
-      this.msgList.push({ userId: this.userId, msg: e.target.value });
+      if (!window.WebSocket) return;
+      if (this.socket.readyState === WebSocket.OPEN) {
+        const message = {
+          type: "sendTo",
+          sendToUser: {
+            type: "",
+            appCode: "",
+            userCode: this.userId,
+          },
+          content: e.target.value,
+        };
+        this.socket.send(JSON.stringify(message));
+        // this.msgList.push({ userId: this.userId, msg: e.target.value });
+      }
       this.inputValue = "";
     },
+  },
+
+  created() {
+    console.log("created");
+    if (!window.WebSocket) {
+      window.WebSocket = window.MozWebSocket;
+    }
+    if (window.WebSocket) {
+      const socket = new WebSocket(
+        "wss://xxxxxxx.com/xxx/ws/xxxxxx/ws?type=PC&appCode=1&appName=移动&userCode=17232&userName=张三&isMultiton=true"
+      );
+      socket.onmessage = (ev) => {
+        console.log(`收到消息：${ev.data}`);
+        const { content, sender } = JSON.parse(ev.data) || {}
+        this.msgList.push({ userId: sender.userCode, msg: content });
+      };
+      socket.onopen = () => {
+        console.log("创建websocket连接成功");
+      };
+      socket.onclose = () => {
+        console.log("websocket连接关闭");
+      };
+      socket.onerror = (ev) => {
+        console.log(ev.data);
+      };
+      this.socket = socket;
+    } else {
+      console.error("您的浏览器不支持 WebSocket");
+    }
   },
 };
 </script>
